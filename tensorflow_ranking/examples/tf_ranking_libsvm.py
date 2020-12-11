@@ -27,6 +27,7 @@ general structure:
 
 <relevance int> qid:<query_id int> [<feature_id int>:<feature_value float>]
 
+libsvm format: label index1:value1 index2:value2
 For example:
 
 1 qid:10 32:0.14 48:0.97  51:0.45
@@ -69,7 +70,7 @@ Notes:
 from absl import flags
 
 import numpy as np
-import six
+import six #Python 2 and 3 compatibility library
 import tensorflow as tf
 import tensorflow_ranking as tfr
 
@@ -119,6 +120,7 @@ class IteratorInitializerHook(tf.estimator.SessionRunHook):
 
   def after_create_session(self, session, coord):
     """Initialize the iterator after the session has been created."""
+    #Coordinator object which keeps track of all threads.
     del coord
     self.iterator_initializer_fn(session)
 
@@ -128,7 +130,7 @@ def example_feature_columns():
   feature_names = ["{}".format(i + 1) for i in range(FLAGS.num_features)]
   return {
       name:
-      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)
+      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0) #tensor representing column will have shape of [batch_size] + shape.
       for name in feature_names
   }
 
@@ -251,7 +253,7 @@ def get_eval_inputs(features, labels):
     else:
       labels_placeholder = tf.compat.v1.placeholder(labels.dtype, labels.shape)
     dataset = tf.data.Dataset.from_tensors(
-        (features_placeholder, labels_placeholder))
+        (features_placeholder, labels_placeholder))  #to construct a Dataset from data in memory.
     iterator = tf.compat.v1.data.make_initializable_iterator(dataset)
     if _use_multi_head():
       feed_dict = {
@@ -279,6 +281,7 @@ def make_serving_input_fn():
 
 def make_transform_fn():
   """Returns a transform_fn that converts features to dense Tensors."""
+  #dense tensors store values in contiguous sequential block of memory where all values are represented.
 
   def _transform_fn(features, mode):
     """Defines transform_fn."""
@@ -317,7 +320,7 @@ def make_score_fn():
     """Defines the network to score a group of documents."""
     with tf.compat.v1.name_scope("input_layer"):
       group_input = [
-          tf.compat.v1.layers.flatten(group_features[name])
+          tf.compat.v1.layers.flatten(group_features[name]) #flatten is to convert data into 1-D array for inputting it to the next layer.
           for name in sorted(example_feature_columns())
       ]
       input_layer = tf.concat(group_input, 1)
@@ -450,6 +453,7 @@ def train_and_eval():
   # Evaluate on the test data.
   estimator.evaluate(input_fn=test_input_fn, hooks=[test_hook])
 
+#Generating predictions
 
 def main(_):
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)

@@ -24,14 +24,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import inspect
+import inspect #provides functions for learning about live objects, including modules, classes, instances, functions, and methods
 import tensorflow as tf
 
 from tensorflow_ranking.python import metrics_impl
 from tensorflow_ranking.python import utils
 
+#tf.pow computes the power of one value to another. (2^label)
 _DEFAULT_GAIN_FN = lambda label: tf.pow(2.0, label) - 1
 
+#tf.math.log computes natural logarithm of x element-wise.
+#tf.math.log1p computes natural logarithm of (1+x) element-wise.
 _DEFAULT_RANK_DISCOUNT_FN = lambda rank: tf.math.log(2.) / tf.math.log1p(rank)
 
 
@@ -100,6 +103,8 @@ def compute_mean(metric_key,
   assert metric_key in metric_dict, ('metric_key %s not supported.' %
                                      metric_key)
   metric, weight = metric_dict[metric_key].compute(labels, predictions, weights)
+  #tf.compat.v1.div_no_nan computes safe divide which returns 0 if the y is 0.
+  #tf.compat.v1.reduce_sum computes sum of elements across dimensions of a tensor.
   return tf.compat.v1.div_no_nan(
       tf.reduce_sum(input_tensor=metric * weight),
       tf.reduce_sum(input_tensor=weight))
