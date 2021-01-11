@@ -179,6 +179,17 @@ def make_ranking_metric_fn(metric_key,
         gain_fn=gain_fn,
         rank_discount_fn=rank_discount_fn)
 
+  def _normalized_discounted_cumulative_gain_fn_NEW(labels, predictions, features):
+    """Returns normalized discounted cumulative gain as the metric."""
+    return _normalized_discounted_cumulative_gain_fn_NEW(
+        labels,
+        predictions,
+        weights=_get_weights(features),
+        topn=topn,
+        name=name,
+        gain_fn=gain_fn,
+        rank_discount_fn=rank_discount_fn)
+
   def _discounted_cumulative_gain_fn(labels, predictions, features):
     """Returns discounted cumulative gain as the metric."""
     return discounted_cumulative_gain(
@@ -236,7 +247,7 @@ def make_ranking_metric_fn(metric_key,
   metric_fn_dict = {
       RankingMetricKey.ARP: _average_relevance_position_fn,
       RankingMetricKey.MRR: _mean_reciprocal_rank_fn,
-      RankingMetricKey.NDCG: _normalized_discounted_cumulative_gain_fn,
+      RankingMetricKey.NDCG: _normalized_discounted_cumulative_gain_fn_NEW,
       RankingMetricKey.DCG: _discounted_cumulative_gain_fn,
       RankingMetricKey.PRECISION: _precision_fn,
       RankingMetricKey.MAP: _mean_average_precision_fn,
@@ -413,7 +424,24 @@ def normalized_discounted_cumulative_gain(
   """
   metric = metrics_impl.NDCGMetric(name, topn, gain_fn, rank_discount_fn)
   with tf.compat.v1.name_scope(metric.name,
-                               'normalized_discounted_cumulative_gain',
+                               'normalized_discounted_cumulative_gain_',
+                               (labels, predictions, weights)):
+    per_list_ndcg, per_list_weights = metric.compute(labels, predictions,
+                                                     weights)
+  return tf.compat.v1.metrics.mean(per_list_ndcg, per_list_weights)
+
+def normalized_discounted_cumulative_gain_NEW(
+    labels,
+    predictions,
+    weights=None,
+    topn=None,
+    name=None,
+    gain_fn=_DEFAULT_GAIN_FN,
+    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
+
+  metric = metrics_impl.NDCGMetric(name, topn, gain_fn, rank_discount_fn)
+  with tf.compat.v1.name_scope(metric.name,
+                               'normalized_discounted_cumulative_gain_NEW',
                                (labels, predictions, weights)):
     per_list_ndcg, per_list_weights = metric.compute(labels, predictions,
                                                      weights)
